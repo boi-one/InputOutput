@@ -1,18 +1,23 @@
-int score;
+#include <NewPing.h>
+
+unsigned int score;
 int Lflipper;
 int Rflipper;
 int Lbumper;
 int Rbumper;
 int Tbumper;
-int hole;
 int ballsAmount = 3;
-bool addPoints = false;
-bool removeBalls = false;
+bool getScore = false;
+bool getBallAmount = false;
+bool gameOver = false;
+float duration, distance;
+float durationBallS, distanceBallS;
+NewPing sonar(9, 10, 5);
+NewPing sonarBall(11, 12, 5);
 
 void setup() {
   Serial.begin(9600);
   // put your setup code here, to run once:
-  score += 123;
   //Serial.println(score);
   pinMode(2, INPUT_PULLUP);   //linker knop 5
   digitalWrite(2, LOW);
@@ -23,7 +28,10 @@ void setup() {
   pinMode(6, OUTPUT);  //linker bumper 2
   pinMode(7, INPUT);  //rechter bumper 2
   pinMode(8, INPUT);  //top bumper 4
-  pinMode(9, INPUT);  //hole 4
+  pinMode(9, OUTPUT);  //score trigger
+  pinMode(10, INPUT);  //score echo
+  pinMode(11, OUTPUT); //ball counter trigger
+  pinMode(12, INPUT); //ball counter echo
 }
 void loop() {
   // put your main code here, to run repeatedly:
@@ -33,11 +41,41 @@ void loop() {
   Lbumper = digitalRead(6);
   Rbumper = digitalRead(7);
   Tbumper = digitalRead(8);
-  holeInp = digitalRead(9);
-  holeOutp = digitalRead(10);
-  //Serial.println("knop1 " + String(k1) + " knop2 " + String(k2));
 
-  if(k2 > 0){
+  //Serial.println("knop1 " + String(k1) + " knop2 " + String(k2));
+  
+  //get score
+  duration = sonar.ping();                        
+  distance = (duration/2)*0.0343;
+  //Serial.println(score);
+  if(distance < 3.00){
+    getScore = true;
+  }
+  else if(distance > 3.00){
+    getScore = false;
+  }
+  if(getScore){
+    score += 10;
+  }
+
+//ball count
+  durationBallS = sonarBall.ping();
+  distanceBallS = (durationBallS/2)*0.0343;
+  int previousBallAmount = ballsAmount;
+  if(distanceBallS > 3.00){
+    getBallAmount = true; 
+  }
+  if(getBallAmount){
+    ballsAmount--;
+    getBallAmount = false;
+    delay(1000);
+  }
+  if(ballsAmount == 0){
+    gameOver = true;
+  }
+  Serial.println(String(score)+" "+String(ballsAmount));
+
+   if(k2 > 0){
     Serial.println(Lbumper);
     digitalWrite(6, HIGH);
   }
@@ -48,59 +86,7 @@ void loop() {
     digitalWrite(7, HIGH);
   }
   else if(k1 <= 0)
-    digitalWrite(, LOW);
-
-  //ballsLight = analogRead(11);
-
-  if (Lbumper > 0 || Rbumper > 0) {
-    addPoints = true;
-    if (addPoints) {
-      score += 100;
-      addPoints = false;
-    }
-  }
-  if (Tbumper > 0) {
-    addPoints = true;
-    if (addPoints) {
-      score += 500;
-      addPoints = false;
-    }
-  }
-
-//check if ball fell in hole
-  if(){
-    
-  }
-
-
-
-
-
-
-  //old code
-  if (hole > 0) {
-    removeBalls = true;
-    if (removeBalls) {
-      ballsAmount--;
-      removeBalls = false;
-    }
-  }
-  switch (ballsAmount) {
-    case 3:
-      pinMode(11, OUTPUT);
-      analogWrite(11, 255);
-      break;
-    case 2:
-      pinMode(11, OUTPUT);
-      analogWrite(11, 170);
-      break;
-    case 1:
-      pinMode(11, OUTPUT);
-      analogWrite(11, 85);
-      break;
-    case 0:
-      pinMode(11, OUTPUT);
-      analogWrite(11, 0);
-      break;
-  }
+    digitalWrite(7, LOW);
 }
+
+
